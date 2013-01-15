@@ -6,15 +6,17 @@ use Data::Dumper;
 use YAML qw/LoadFile/;
 use Getopt::Long;
 
-my $f_config = "./etc/config.yaml";
+my $f_config = findConfigFiles("./etc/config/");
 my $c = LoadFile($f_config);
 
+# Process some options:
 GetOptions(
 	"a=s@" => \$c->{'serveraliases'},
 	"u=s"  => \$c->{'username'},
 );
 $c->{'domain'} = $ARGV[0];
 
+# Check the domain is sane, and decide whether or not to deduce usernames from it:
 if($c->{'domain'} =~ /^([^\.]+)/){
 	$c->{'username'} = $1 unless $c->{'username'} =~ /.+/;
 	if(my $pid = unixUserExists($c->{'username'})){
@@ -24,6 +26,15 @@ if($c->{'domain'} =~ /^([^\.]+)/){
 	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
 }
 
+
+# The config file has a list of passwords that will need to be generated.
+# We generate and store them here:
+my $passwords = $c->{'passwords'};
+foreach(keys(%$passwords)){
+	$c->{'passwords'}->{$_}->{'password'} = createPassword($c->{'passwords'}->{$_}->{'length'});
+}
+
+# Now 
 my $scripts = $c->{'scripts'};
 foreach(@$scripts){
 	my $script = interpretPlaceholders($_);
@@ -32,8 +43,6 @@ foreach(@$scripts){
 
 
 print Dumper($c);
-
-
 
 # # # #
 
@@ -44,15 +53,50 @@ sub unixUserExists{
 
 sub interpretPlaceholders{
 	my $line = shift;
-	$line =~ s/%U/$c->{'username'}/g;
-	$line =~ s/%T/$c->{'templates_dir'}/g;
+	$line =~ s/%USERNAME%/"$c->{'username'}"/g;
+	$line =~ s/%TEMPLATES_DIR%/"$c->{'templates_dir'}"/g;
+	$line =~ s/%DOMAIN%/"$c->{'domain'}/g;
 
-	if($line =~ /%D/){
+	if($line =~ /%DOMAINS%/){
 		my $domains = $c->{'domain'};
 		$domains.=" ".join(" ", @{$c->{'serveraliases'}});
-		$line =~ s/%D/$domains/;
+		$line =~ s/%DOMAINS%/$domains/g;
+	}
+
+	if($line =~ /%PASSWORD_(\S+)%/){
+		my $passwordName = $1;
+		print "[$passwordName]\n";
+		if (my $pw = $c->{'passwords'}->{$passwordName}->{'password'}){
+			$line =~ s/%P_$passwordName%/"$pw"/g;
+		}
 	}
 	return $line;
+}
+
+sub createPassword{
+	my $length = shift;
+	my @chars = ("A".."Z", "a".."z", 1..9);
+	@chars = (@chars, "!", '$', "%", "^", "&", "*", "(", ")", "{", "}", "[", "]", ":", "@");
+	@chars = (@chars, "~", ";", "'", "#", "<", ">", "?", ",", ".");
+	my $password;
+	for(my $i = 0; $i<$length; $i++){
+		$password.=$chars[rand($#chars)];
+	}
+	return $password;
+}
+
+sub findConfigFiles{
+	my $d_config = shift;
+	opendir(my $dh_config, $d_config) or die "Couldn't open config directory '$d_config' : $!";
+	my @f_config = grep{/\.yaml$/} sort(readdir($dh_config));
+	return $d_config."/".$f_config[0] if $#f_config == 0;
+	print "Multiple config files found; pick one by number:\n";
+	for(my $i = 0; $i<=$#f_config; $i++){
+		print "$i\t$f_config[$i]\n";
+	}
+	print "\n";
+	my $choice = <STDIN>;
+	return $d_config."/".$f_config[$choice] if($f_config[$choice] =~ /.+/);
 }
 
 sub _error{
@@ -66,5 +110,5 @@ sub _error{
 sub _log{
 	my $message = shift;
 	chomp $message;
-	print "INFO: ". $message."\n";;
+	print "INFO: ". $message."\n";
 }
