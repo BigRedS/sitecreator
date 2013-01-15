@@ -1,0 +1,27 @@
+s is a YAML file. It has two annoying rules:
+#  - It must have a line of three hyphens at the beginning
+#  - Line indentation _must_ be spaces and not tabs.
+---
+# Where to look for scripts and templates:
+scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
+templates_dir: /home/avi/bin/sitecreator/etc/scripts/templates
+
+# Scripts to run, in the order in which they should be run. There
+# are some placeholders to use to have arguments sent to the scripts:
+#	%D	a space-separated list of domains, including aliases
+#		the first member of the list is the domain passed as
+#		the argument, followed by those specified by -a
+#	%U	username
+#	%T	templates directory
+scripts:
+ - create_unix_user.sh %U
+ - create_mysql_user.sh %U
+ - create_apache_vhost.pl %U %T %D
+ - restart_apache.sh
+ - add_ssh_keys.sh %U %T
+
+mysql:
+  user: debian-sys-maint
+
+apache:
+  sitedomain: /bin/hostname 

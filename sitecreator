@@ -1,8 +1,70 @@
 #! /usr/bin/perl
 
 use strict;
-use YAML;
+use Data::Dumper;
+
+use YAML qw/LoadFile/;
+use Getopt::Long;
 
 my $f_config = "./etc/config.yaml";
+my $c = LoadFile($f_config);
+
+GetOptions(
+	"a=s@" => \$c->{'serveraliases'},
+	"u=s"  => \$c->{'username'},
+);
+$c->{'domain'} = $ARGV[0];
+
+if($c->{'domain'} =~ /^([^\.]+)/){
+	$c->{'username'} = $1 unless $c->{'username'} =~ /.+/;
+	if(my $pid = unixUserExists($c->{'username'})){
+		_error("There is already a unix user with the name $c->{'username'} (pid: $pid)");
+	}
+}else{
+	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
+}
+
+my $scripts = $c->{'scripts'};
+foreach(@$scripts){
+	my $script = interpretPlaceholders($_);
+	_log($script);
+}
 
 
+print Dumper($c);
+
+
+
+# # # #
+
+sub unixUserExists{
+	my $user = shift;
+	return getpwnam($user);
+}
+
+sub interpretPlaceholders{
+	my $line = shift;
+	$line =~ s/%U/$c->{'username'}/g;
+	$line =~ s/%T/$c->{'templates_dir'}/g;
+
+	if($line =~ /%D/){
+		my $domains = $c->{'domain'};
+		$domains.=" ".join(" ", @{$c->{'serveraliases'}});
+		$line =~ s/%D/$domains/;
+	}
+	return $line;
+}
+
+sub _error{
+	my $message = shift;
+	my $exit = shift || 1;
+	chomp $message;
+	print STDERR $message."\n";
+	exit $exit;
+}
+
+sub _log{
+	my $message = shift;
+	chomp $message;
+	print "INFO: ". $message."\n";;
+}
