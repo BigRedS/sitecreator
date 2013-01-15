@@ -1,4 +1,4 @@
-s is a YAML file. It has two annoying rules:
+# This is a YAML file. It has two annoying rules:
 #  - It must have a line of three hyphens at the beginning
 #  - Line indentation _must_ be spaces and not tabs.
 ---
@@ -7,7 +7,8 @@ scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
 templates_dir: /home/avi/bin/sitecreator/etc/scripts/templates
 
 # Passwords that will need to be generated. These are created 
-# according to options here, but 
+# according to options here and passed to the scripts when called
+# as %PASSWORD_<name>%:
 passwords:
  mysql:
   length: 12
@@ -19,15 +20,15 @@ passwords:
 
 # Scripts to run, in the order in which they should be run. There
 # are some placeholders to use to have arguments sent to the scripts:
-#	%DOMAINS        a space-separated list of domains, including aliases
-#                       the first member of the list is the domain passed as
-#                       the argument, followed by those specified by -a
-#	%USERNAME       username
-#	%TEMPLATES_DIR  templates directory
-#	%PASSWORD_xxx   generate a password. The 'xxx' must be listed in the 'passwords'
-#		        section
+#	%DOMAINS%         a space-separated list of domains, including aliases
+#                         the first member of the list is the domain passed as
+#                         the argument, followed by those specified by -a
+#	%USERNAME%        username
+#	%TEMPLATES_DIR%   templates directory
+#	%PASSWORD_<name>% Generated password. This password will only be generated
+#                         if it is listed in 'passwords' above
 scripts:
- - create_unix_user.sh %USERNAME%
+ - create_unix_user.sh %USERNAME% %PASSWORD_unix%
  - create_mysql.sh %USERNAME% %PASSWORD_mysql%
  - create_mysql.sh %USERNAME_dev %PASSWORD_mysqldev
  - create_apache_vhost.pl %USERNAME% %TEMPLATES_DIR% %DOMAINS%
