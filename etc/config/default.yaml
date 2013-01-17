@@ -39,7 +39,8 @@ users:
 # unix one, but can have the same username. This is then called 
 # %PASSWORD_mysql% when it is passed to create_mysql.sh:
 # 'mysqldev', however, also requires a new username. This username is
-# created by appending the 'username_suffix' to the generated username.
+# created with the 'username' key', which uses the same placeholders as
+# does the scripts block below.
 # Incidentally, the create_mysql.sh script creates a database for each user, 
 # but that's not defined here.
  mysql:
@@ -55,15 +56,31 @@ users:
   # as per the arguments to scripts.
   _database_label: database
   _database_value: %USERNAME%
+  _host_label: hostname
+  _host_value: localhost
   
  mysqldev:
   label: MySQL Dev user
-  username_suffix: _dev
+  username: %USERNAME%_dev
   _database_label: database
   _database_value: %USERNAME%_dev
+  _host_label: hostname
+  _host_value: localhost
   length: 12
   order: 3
 
+ mail:
+  label: Mail administration
+  length: 14
+  username: %DOMAIN%
+  _url_label: Mail admin URL
+  _url_value: https://%DOMAIN%/mailadmin
+  order: 5
+  _mx1_label: primary MX record
+  _mx1_value: mx1.%DOMAIN%
+  _mx2_label: secondary MX record
+  _mx2_value: mx2.%DOMAIN%
+  
 scripts:
 # Scripts to run, in the order in which they should be run. There
 # are some placeholders to use to have arguments sent to the scripts:
