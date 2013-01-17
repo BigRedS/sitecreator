@@ -11,28 +11,29 @@ my $d_configFiles = "./etc/config/";
 # Once we've worked out which config file
 # to use, that'll go here:
 my $f_config = undef;
-# This is the hashref that we'll fill from
-# the YAML and command-line options:
-my $c;
 # How much stuff to print to screen:
 my $verbosity = 1;
 # Used to store the option passed when the
 # user asks for a specific config file:
 my $configFilePreference = undef;
+# Whether to actually do anything or not:
+my $dryRun = undef;
 
 
 # Process some options:
+my ($serveraliases, $username);
 GetOptions(
-	"a=s@" => \$c->{'serveraliases'},
-	"u=s"  => \$c->{'username'},
+	"a=s@" => \$serveraliases,
+	"d!"   => \$dryRun,
+	"u=s"  => \$username,
 	"c=s"  => \$configFilePreference,
 	"v=i"  => \$verbosity,
 );
 
 # Check we've got a domain. If not, offer
 # some small help:
-$c->{'domain'} = $ARGV[0];
-if ($c->{'domain'} =~ /^\s*$/){
+my $domain = $ARGV[0];
+if ($domain =~ /^\s*$/){
 	print usage();
 	exit 1;
 }
@@ -58,9 +59,12 @@ if($configFilePreference){
 }
 _info( "Using config file '$f_config'");
 my $c = LoadFile($f_config);
+$c->{'domain'} = $domain;
 
 # Check the domain is sane, and decide whether or not to deduce usernames from it:
-if($c->{'domain'} =~ /^([^\.]+)/){
+if($username =~ /.+/){
+	$c->{'username'} = $username;
+}elsif($c->{'domain'} =~ /^([^\.]+)/){
 	$c->{'username'} = $1 unless $c->{'username'} =~ /.+/;
 	if(my $pid = unixUserExists($c->{'username'})){
 		_error("There is already a unix user with the name $c->{'username'} (pid: $pid)");
@@ -86,8 +90,9 @@ my $scripts = $c->{'scripts'};
 foreach(@$scripts){
 	my $script = interpretPlaceholders($_);
 	$script = $c->{'env'}->{'scripts_dir'}.$script;
-	_info("running $script");
-	system($script);
+	_info("running $script") unless $dryRun > 0;
+	_info("DRYRUN: $script") if $dryRun > 0;
+	system($script) unless $dryRun > 0;
 }
 
 # # # #
