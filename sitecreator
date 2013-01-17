@@ -56,6 +56,8 @@ if($c->{'domain'} =~ /^([^\.]+)/){
 	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
 }
 
+setEnvironmentVariables($c, "scripts_dir", "templates_dir");
+
 
 # The config file has a list of passwords that will need to be generated.
 # We generate and store them here:
@@ -108,6 +110,16 @@ sub interpretPlaceholders{
 	}
 
 	return $line;
+}
+
+sub setEnvironmentVariables{
+	my $c = shift;
+	my @keys = @_;
+	foreach my $key (@keys){
+		my $envKey = uc($key);
+		$ENV{$envKey} = $c->{$key};
+		_info("Set \$ENV{$envKey} to '".$c->{$key}."'");
+	}
 }
 
 sub createPassword{
