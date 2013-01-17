@@ -98,7 +98,6 @@ foreach my $userName (keys(%$users)){
 		$maxLength = $thisLength if $thisLength > $maxLength;
 	}
 }
-print "[[$maxLength]]\n";
 foreach my $userName (sort{$users->{$a}->{'order'} cmp $users->{$b}->{'order'}} keys(%$users) ){
 	if (my $label = $users->{$userName}->{'label'}){
 		print "$label:\n";
