@@ -12,12 +12,15 @@ my $d_configFiles = "./etc/config/";
 # to use, that'll go here:
 my $f_config = undef;
 # This is the hashref that we'll fill from
-# the YAML.
+# the YAML and command-line options:
 my $c;
-
+# How much stuff to print to screen:
 my $verbosity = 1;
-
+# Used to store the option passed when the
+# user asks for a specific config file:
 my $configFilePreference = undef;
+
+
 # Process some options:
 GetOptions(
 	"a=s@" => \$c->{'serveraliases'},
@@ -26,6 +29,15 @@ GetOptions(
 	"v=i"  => \$verbosity,
 );
 
+# Check we've got a domain. If not, offer
+# some small help:
+$c->{'domain'} = $ARGV[0];
+if ($c->{'domain'} =~ /^\s*$/){
+	print usage();
+	exit 1;
+}
+
+# Deal with that request for a particular config file:
 if($configFilePreference){
 	my @configFiles = listConfigFiles($d_configFiles);
 	my @matchingConfigFiles = grep {/^$configFilePreference/} @configFiles;
@@ -45,9 +57,7 @@ if($configFilePreference){
 	$f_config = chooseConfigFile("./etc/config/");
 }
 _info( "Using config file '$f_config'");
-
 my $c = LoadFile($f_config);
-$c->{'domain'} = $ARGV[0];
 
 # Check the domain is sane, and decide whether or not to deduce usernames from it:
 if($c->{'domain'} =~ /^([^\.]+)/){
@@ -59,6 +69,7 @@ if($c->{'domain'} =~ /^([^\.]+)/){
 	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
 }
 
+# Convert all the 'env' bit of the yaml to environment vars:
 setEnvironmentVariables();
 
 
@@ -80,12 +91,14 @@ foreach(@$scripts){
 }
 
 # # # #
-
+# Returns true of the user exists, false if it doesn't.
 sub unixUserExists{
 	my $user = shift;
 	return getpwnam($user);
 }
 
+# I'm sure there's a better name for this. Replaces all the  placeholder 
+# strings (%USERNAME% etc.) ith the values that they're a placeholder for.
 sub interpretPlaceholders{
 	my $line = shift;
 	$line =~ s/%USERNAME%/"$c->{'username'}"/g;
@@ -113,7 +126,7 @@ sub interpretPlaceholders{
 
 	return $line;
 }
-
+# Sets environment vars for each thing defined in the 'env' bit of the config:
 sub setEnvironmentVariables{
 	my $e = $c->{'env'};
 	foreach my $key (keys(%{$c->{'env'}})){
@@ -123,6 +136,7 @@ sub setEnvironmentVariables{
 	}
 }
 
+# Create a random password:
 sub createPassword{
 	my $length = shift;
 	my @chars = ("A".."Z", "a".."z", 1..9);
@@ -134,6 +148,8 @@ sub createPassword{
 	}
 	return $password;
 }
+
+# basically 'ls $CONFIG_DIR'
 sub listConfigFiles{
 	my $d_config = shift;
 	opendir(my $dh_config, $d_config) or die "Couldn't open config directory '$d_config' : $!";
@@ -141,6 +157,9 @@ sub listConfigFiles{
 	return @f_config;
 }
 
+# If more than one config file exists, prompts the user to pick one and returns
+# the name of the chosen one. If there's only one, just returns the name of that
+# file
 sub chooseConfigFile{
 	my $d_config = shift;
 	my @f_config = listConfigFiles($d_config);
@@ -155,6 +174,7 @@ sub chooseConfigFile{
 	return $d_config."/".$f_config[$choice] if($f_config[$choice] =~ /.+/);
 }
 
+# Handy for keeping track of/control over various sorts of output:
 sub _warn{
 	return unless $verbosity > 0;
 	my $message = shift;
@@ -178,9 +198,32 @@ sub _info{
 	$message =~ s/\n/\nINFO: /g;
 	print "INFO: $message\n";
 }
+
 sub _log{
 	my $message = shift;
 	chomp $message;
 	$message =~ s/\n/\nLOG:  /g;
 	print "LOG:  $message\n";
+}
+
+sub usage{
+return <<EOF;
+sitecreator
+
+Creates sites.
+
+Usage:
+ sitecreator [options] domain name
+      -a <domains>  List of additional, secondary domains. Perhaps for
+                    use as Apache ServerAliases
+      -c <file>     Config file to use. Should be in the config file 
+      -u <username> username to use, rather than deducing it from the
+                    domain name
+      -v <number>   Verbosity:
+                     2: Informative/debugging output, warnings and errors
+                     1: Non-fatal warnings and fatal errors
+		     0: Only fatal errors
+		    -1: Hide even errors (exits silently on failure)
+
+EOF
 }
