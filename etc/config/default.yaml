@@ -109,6 +109,7 @@ scripts:
  - create_apache_vhost.pl %USERNAME% %DOMAINS%
  - restart_apache.sh
  - add_ssh_keys.sh %USERNAME% %TEMPLATES_DIR%
+ - add_mail_domain.sh %DOMAIN% %PASSWORD_MAIL%
 
 apache:
   testurldomain: /bin/hostname 
