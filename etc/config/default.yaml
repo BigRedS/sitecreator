@@ -31,7 +31,7 @@ users:
   username_suffix: _dev
   length: 12
 
-
+scripts:
 # Scripts to run, in the order in which they should be run. There
 # are some placeholders to use to have arguments sent to the scripts:
 #	%DOMAINS%         a space-separated list of domains, including aliases
@@ -50,7 +50,7 @@ users:
 # a different username. In this case, we're creating the 'mysqldev' user, which not
 # only requiores its own password, but a username suffix of '_dev':
  - create_mysql.sh %USERNAME_mysqldev% %PASSWORD_mysqldev%
- - create_apache_vhost.pl %USERNAME% %TEMPLATES_DIR% %DOMAINS%
+ - create_apache_vhost.pl %USERNAME% %DOMAINS%
  - restart_apache.sh
  - add_ssh_keys.sh %USERNAME% %TEMPLATES_DIR%
 
