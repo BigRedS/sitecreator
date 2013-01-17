@@ -6,7 +6,7 @@ use Data::Dumper;
 use Template;	#libtemplate-perl
 
 my $user = shift;
-my $d_templates = shift;
+my $d_templates = $TEMPLATES_DIR
 my $serverName = shift;
 my @domains = @ARGV;
 
