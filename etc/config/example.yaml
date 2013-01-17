@@ -1,0 +1,57 @@
+# This is a YAML file. It has two annoying rules:
+#  - It must have a line of three hyphens at the beginning
+#  - Line indentation _must_ be spaces and not tabs.
+---
+# This is a sample config file for sitecreator which will create for 
+# the domain 'example.com' 
+#  - a unix user called 'example' with a 9-character password
+#  - an Apache vhost serving files out of ~/public_html
+#  - a MySQL user called 'example' with a 14-character password and
+#    a db called 'example'
+#  - a MySQL user called 'example_dev' with accompanying db called
+#    'example_dev' and a 14-character password.
+
+env:
+ scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
+ templates_dir: /home/avi/bin/sitecreator/etc/templates
+ vhost_dir: /etc/apache2/sites-available/
+
+users:
+ unix:
+  length: 9
+  label: SSH
+ mysql: 
+  length: 14
+  label: MySQL
+  _database_label: database
+  _database_value: %USERNAME%
+ mysqldev:
+  length: 14
+  label: MySQL dev
+  username_suffix: _dev
+  _database_label: database
+  _database_value: %USERNAME%
+
+scripts:
+ - create_unix_user.sh %USERNAME% %PASSWORD_unix%
+ - create_apache_vhost.pl %USERNAME% %DOMAINS%
+ - restart_apache.sh
+ - create_mysql.sh %USERNAME% %PASSWORD_mysql%
+ - create_mysql.sh %USERNAME_mysqldev% %PASSWORD_mysqldev%
+
+# Things to bear in mind:
+#
+# Sitecreator doesn't know that when it called:
+#  create_mysql.sh %USERNAME% %PASSWORD_mysql%
+# this resulted in "a MySQL user called 'example' with a 14-character password 
+# and a db called 'example'"; this is why there's those keys in the mysql user
+# that begin with an underscore. The create_mysql.sh script takes it upon itself
+# to create a database whose name matches the user, and these keys simply allow
+# sitecreator to tell the user this on exit; it doesn't make any other use of
+# these keys.
+#
+# Site creator itself actually does very little - all the actual configuration
+# is done by those scripts with the information passed to them; sitecreator just
+# makes it easier to script the process and get all the info out in a format
+# that's ready for copying and pasting into an email to a customer.
+
