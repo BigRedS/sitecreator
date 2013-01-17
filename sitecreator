@@ -31,6 +31,7 @@ if($c->{'domain'} =~ /^([^\.]+)/){
 # We generate and store them here:
 my $users = $c->{'users'};
 foreach(keys(%$users)){
+	_warn("Zero-length password requested for '$_'") if $c->{'users'}->{$_}->{'length'} < 1;
 	$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
 }
 
@@ -75,6 +76,7 @@ sub interpretPlaceholders{
 		my $userSuffix = $c->{'users'}->{$userName}->{'username_suffix'};
 		$line =~ s/%USERNAME_$userName%/"$c->{'username'}.$users->{'$userName'}->{'username_suffix'}"/g;
 	}
+
 	return $line;
 }
 
@@ -100,8 +102,14 @@ sub findConfigFiles{
 		print "$i\t$f_config[$i]\n";
 	}
 	print "\n";
-	my $choice = <STDIN>;
+	comy $choice = <STDIN>;
 	return $d_config."/".$f_config[$choice] if($f_config[$choice] =~ /.+/);
+}
+
+sub _warn{
+	my $message = shift;
+	chomp $messages;
+	print STDERR $message."\n";
 }
 
 sub _error{
