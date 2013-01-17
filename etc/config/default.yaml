@@ -4,7 +4,7 @@
 ---
 # Where to look for scripts and templates:
 scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
-templates_dir: /home/avi/bin/sitecreator/etc/scripts/templates
+templates_dir: /home/avi/bin/sitecreator/etc/templates
 
 # The 'users' block defines users that will need to be created. In the 
 # next block you pass these details to the scripts that do the actual 
