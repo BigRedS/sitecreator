@@ -78,11 +78,16 @@ setEnvironmentVariables();
 
 
 # The config file has a list of passwords that will need to be generated.
-# We generate and store them here:
+# We generate and store them here. We also resolve any configured usernames.
 my $users = $c->{'users'};
 foreach(keys(%$users)){
 	_warn("Zero-length password requested for '$_'") if $c->{'users'}->{$_}->{'length'} < 1;
 	$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
+	if($c->{'users'}->{$_}->{'username'}){
+		$c->{'users'}->{$_}->{'username'} = interpretPlaceholders($c->{'users'}->{$_}->{'username'}, 1);
+	}else{
+		$c->{'users'}->{$_}->{'username'} = $c->{'username'};
+	}
 }
 
 # Iterate through the scripts, running each one:
@@ -96,14 +101,14 @@ foreach(@$scripts){
 }
 
 my $users = $c->{'users'};
-#foreach my $userName (keys(%$users)){
 foreach my $userName (sort{$users->{$a}->{'order'} cmp $users->{$b}->{'order'}} keys(%$users) ){
 	if (my $label = $users->{$userName}->{'label'}){
 		print "$label:\n";
 	}else{
 		print "$userName\n";
 	}
-	print "\tusername: $c->{'username'}".$users->{$userName}->{'username_suffix'}."\n";
+	print "\tusername: ".$users->{$userName}->{'username'}."\n";
+#$c->{'username'}".$users->{$userName}->{'username_suffix'}."\n";
 	print "\tpassword: $users->{$userName}->{'password'}\n";
 	foreach(sort(keys($users->{$userName}))){
 		if($_ =~ /^_(.+)_label$/){
@@ -135,7 +140,7 @@ sub interpretPlaceholders{
 		$q = '';
 	}
 	$line =~ s/%USERNAME%/$q$c->{'username'}$q/g;
-	$line =~ s/%DOMAIN%/$q$c->{'domain'}/g;
+	$line =~ s/%DOMAIN%/$q$c->{'domain'}$q/g;
 
 	if($line =~ /%DOMAINS%/){
 		my $domains = $c->{'domain'};
@@ -152,8 +157,8 @@ sub interpretPlaceholders{
 
 	if($line =~ /%USERNAME_(\S+)%/){
 		my $userName = $1;
-		my $userSuffix = $c->{'users'}->{$userName}->{'username_suffix'};
-		$line =~ s/%USERNAME_$userName%/$q$c->{'username'}.$users->{'$userName'}->{'username_suffix'}$q/g;
+		my $user = interpretPlaceholders($c->{'users'}->{$userName}->{'$username'});
+		$line =~ s/%USERNAME_$userName%/$q$user$q/g;
 	}
 
 	return $line;
