@@ -15,12 +15,15 @@ my $f_config = undef;
 # the YAML.
 my $c;
 
+my $verbosity = 1;
+
 my $configFilePreference = undef;
 # Process some options:
 GetOptions(
 	"a=s@" => \$c->{'serveraliases'},
 	"u=s"  => \$c->{'username'},
 	"c=s"  => \$configFilePreference,
+	"v=i"  => \$verbosity,
 );
 
 if($configFilePreference){
@@ -30,10 +33,10 @@ if($configFilePreference){
 	if ($numMatched == 1){
 		$f_config = $d_configFiles."/".@matchingConfigFiles[0];
 	}else{
-		_warn("Ambiguous config file choice. Found $numMatched files:");
+		_error("Ambiguous config file choice. Found $numMatched files:", 0);
 		if($numMatched > 1){
 			foreach(@matchingConfigFiles){
-				_warn("\t$_");
+				_error("\t$_", 0);
 			}
 		}
 		_error("Run without '-c' to be presented with a list to choose from");
@@ -142,30 +145,34 @@ sub chooseConfigFile{
 	my $d_config = shift;
 	my @f_config = listConfigFiles($d_config);
 	return $d_config."/".$f_config[0] if $#f_config == 0;
-	print "Multiple config files found; pick one by number:\n";
+	exit 1 if $verbosity < 0;
+	_error("Multiple config files found; pick one by number:\n", 0);
 	for(my $i = 0; $i<=$#f_config; $i++){
-		print "$i\t$f_config[$i]\n";
+		_error("$i\t$f_config[$i]\n", 0);
 	}
-	print "\n";
+	_error( "\n", 0);
 	my $choice = <STDIN>;
 	return $d_config."/".$f_config[$choice] if($f_config[$choice] =~ /.+/);
 }
 
 sub _warn{
+	return unless $verbosity > 0;
 	my $message = shift;
 	chomp $message;
 	print STDERR $message."\n";
 }
 
 sub _error{
+	return unless $verbosity > -1;
 	my $message = shift;
 	my $exit = shift || 1;
 	chomp $message;
 	print STDERR $message."\n";
-	exit $exit;
+	exit $exit if $exit > 1
 }
 
 sub _info{
+	return unless $verbosity > 1;
 	my $message = shift;
 	chomp $message;
 	$message =~ s/\n/\nINFO: /g;
