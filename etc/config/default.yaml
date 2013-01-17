@@ -2,9 +2,18 @@
 #  - It must have a line of three hyphens at the beginning
 #  - Line indentation _must_ be spaces and not tabs.
 ---
-# Where to look for scripts and templates:
-scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
-templates_dir: /home/avi/bin/sitecreator/etc/templates
+
+# Some environment variables. 'keys' are uppercased
+# before setting, and may be set in any order:
+env:
+ # Where to look for scripts, this one is required:
+ scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
+ # Where to look for diretories; this one is required by 
+ # the apache script
+ templates_dir: /home/avi/bin/sitecreator/etc/templates
+ # Where to write Apache Vhosts. This, too, is required by
+ # the apache vhost script:
+ vhost_dir: /tmp
 
 # The 'users' block defines users that will need to be created. In the 
 # next block you pass these details to the scripts that do the actual 
