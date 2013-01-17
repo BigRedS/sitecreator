@@ -1,5 +1,6 @@
 <virtualhost *:80>
 	ServerName [% ServerName %]
+	ServerAlias www.[% ServerName %]
 	[% ServerAliases %]
 	ErrorLog /home/[% user %]/logs/error.log
 	CustomLog /home/[% user %]/logs/access.log combined
