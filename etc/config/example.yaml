@@ -39,9 +39,7 @@ scripts:
  - create_mysql.sh %USERNAME% %PASSWORD_mysql%
  - create_mysql.sh %USERNAME_mysqldev% %PASSWORD_mysqldev%
 
-# Things to bear in mind:
-#
-# Sitecreator doesn't know that when it called:
+# Sitecreator doesn't know that when it called
 #  create_mysql.sh %USERNAME% %PASSWORD_mysql%
 # this resulted in "a MySQL user called 'example' with a 14-character password 
 # and a db called 'example'"; this is why there's those keys in the mysql user
@@ -53,5 +51,25 @@ scripts:
 # Site creator itself actually does very little - all the actual configuration
 # is done by those scripts with the information passed to them; sitecreator just
 # makes it easier to script the process and get all the info out in a format
-# that's ready for copying and pasting into an email to a customer.
-
+# that's ready for copying and pasting into an email to a customer. Running 
+# sitecreator with this config file and the domain 'example.com' results in
+# this output:
+#
+#    avi@amazing:~$ sitecreator example.com -d -c example
+#    MySQL:
+#            username: example
+#            password: gN?@c6$Y7}Y{yg
+#            database: example
+#    
+#    SSH:
+#            username: example
+#            password: r;x6kEgO!
+#    
+#    MySQL dev:
+#            username: example_dev
+#            password: vA!)9WIMo&by}'
+#            database: example
+#    
+#    avi@amazing:~$ 
+#
+#
