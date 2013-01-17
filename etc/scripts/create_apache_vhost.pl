@@ -12,8 +12,6 @@ my $serverName = shift;
 my @domains = @ARGV;
 my $f_virtualhost = "$d_virtualhost/$serverName";
 
-print "$f_virtualhost\n";
-
 my $tt = Template->new({
 	INCLUDE_PATH => $d_templates,
 	INTERPOLATE  => 1,
