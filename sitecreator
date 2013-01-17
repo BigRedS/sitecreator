@@ -39,7 +39,7 @@ if($configFilePreference){
 		_error("Run without '-c' to be presented with a list to choose from");
 	}
 }else{
-	my $f_config = chooseConfigFile("./etc/config/");
+	$f_config = chooseConfigFile("./etc/config/");
 }
 _info( "Using config file '$f_config'");
 
