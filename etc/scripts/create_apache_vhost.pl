@@ -7,13 +7,12 @@ use Template;	#libtemplate-perl
 
 my $user = shift;
 my $d_templates = $ENV{'TEMPLATES_DIR'};
-my $d_virtualhost = $ENV{'VHOST_DIR'};
 my $serverName = shift;
 my @domains = @ARGV;
-my $f_virtualhost = "$d_virtualhost/$serverName";
 
 my $tt = Template->new({
 	INCLUDE_PATH => $d_templates,
+	OUTPUT_PATH  => $ENV{'VHOST_DIR'}
 	INTERPOLATE  => 1,
 }) || die "Error creating Template Toolkit object: $Template::ERROR\n";
 
@@ -23,7 +22,7 @@ my $vars = {
 	ServerAliases => createServerAliasDirectives(@domains),
 };
 
-$tt->process('create_apache_vhost', $vars, $f_virtualhost) or die "Error creating vhost at $f_virtualhost : $!";
+$tt->process('create_apache_vhost', $vars, $serverName) or die "Error creating vhost at $f_virtualhost : $!";
 
 sub createServerAliasDirectives{
 	my @domains = @_;
