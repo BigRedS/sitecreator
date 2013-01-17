@@ -1,7 +1,7 @@
 #! /bin/bash
 
-USERNAME = $1
-PASSWORD = $2
+USERNAME=$1
+PASSWORD=$2
 
-/user/sbin/whiuseradd -s /bin/bash -m $USERNAME
+/user/sbin/useradd -s /bin/bash -m $USERNAME
 echo $USERNAME:$PASSWORD | /usr/sbin/chpasswd
