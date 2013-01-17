@@ -22,13 +22,7 @@ my $output = undef;
 
 $tt->process('create_ssh_chroot', $vars, \$output) or die "Error procesing template: $Template::ERROR\n";
 
-print "\n$output\n";
-
-sub createServerAliasDirectives{
-	my @domains = @_;
-	my $directives;
-	foreach(@_){
-		$directives.= "ServerAlias $_ www.$_\n\t";
-	}
-	return $directives;
-}
+open(my $fh, ">>", $f_sshdConfig) or die "Error opening sshd config dir '$f_sshdConfig' : $!";
+print $fh "\n$output\n";
+close($fh);
+exit 0;
