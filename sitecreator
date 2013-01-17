@@ -56,7 +56,7 @@ if($c->{'domain'} =~ /^([^\.]+)/){
 	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
 }
 
-setEnvironmentVariables($c, "scripts_dir", "templates_dir");
+setEnvironmentVariables();
 
 
 # The config file has a list of passwords that will need to be generated.
@@ -67,15 +67,14 @@ foreach(keys(%$users)){
 	$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
 }
 
-# Now 
+# Iterate through the scripts, running each one:
 my $scripts = $c->{'scripts'};
 foreach(@$scripts){
 	my $script = interpretPlaceholders($_);
-	_log($script);
+	$script = $c->{'env'}->{'scripts_dir'}.$script;
+	_info("running $script");
+	system($script);
 }
-
-
-print Dumper($c);
 
 # # # #
 
@@ -113,12 +112,11 @@ sub interpretPlaceholders{
 }
 
 sub setEnvironmentVariables{
-	my $c = shift;
-	my @keys = @_;
-	foreach my $key (@keys){
+	my $e = $c->{'env'};
+	foreach my $key (keys(%{$c->{'env'}})){
 		my $envKey = uc($key);
-		$ENV{$envKey} = $c->{$key};
-		_info("Set \$ENV{$envKey} to '".$c->{$key}."'");
+		$ENV{$envKey} = $c->{'env'}->{$key};
+		_info("Set \$ENV{$envKey} to '".$ENV{$envKey}."' ($c->{'env'}->{$key})");
 	}
 }
 
@@ -170,10 +168,12 @@ sub _error{
 sub _info{
 	my $message = shift;
 	chomp $message;
+	$message =~ s/\n/\nINFO: /g;
 	print "INFO: $message\n";
 }
 sub _log{
 	my $message = shift;
 	chomp $message;
-	print "INFO: ". $message."\n";
+	$message =~ s/\n/\nLOG:  /g;
+	print "LOG:  $message\n";
 }
