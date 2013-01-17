@@ -30,38 +30,21 @@ GetOptions(
 	"v=i"  => \$verbosity,
 );
 
-# Check we've got a domain. If not, offer
-# some small help:
+# Check we've got a domain. If not, offer some small help:
 my $domain = $ARGV[0];
 if ($domain =~ /^\s*$/){
 	print usage();
 	exit 1;
 }
 
-# Deal with that request for a particular config file:
-if($configFilePreference){
-	my @configFiles = listConfigFiles($d_configFiles);
-	my @matchingConfigFiles = grep {/^$configFilePreference/} @configFiles;
-	my $numMatched = scalar(@matchingConfigFiles);
-	if ($numMatched == 1){
-		$f_config = $d_configFiles."/".@matchingConfigFiles[0];
-	}else{
-		_error("Ambiguous config file choice. Found $numMatched files:", 0);
-		if($numMatched > 1){
-			foreach(@matchingConfigFiles){
-				_error("\t$_", 0);
-			}
-		}
-		_error("Run without '-c' to be presented with a list to choose from");
-	}
-}else{
-	$f_config = chooseConfigFile("./etc/config/");
-}
+# Work out which config file we should be using, and load it:
+$f_config = chooseConfigFile($d_configFiles,$configFilePreference);
 _info( "Using config file '$f_config'");
 my $c = LoadFile($f_config);
 $c->{'domain'} = $domain;
 
-# Check the domain is sane, and decide whether or not to deduce usernames from it:
+# Check the domain is sane, decide whether or not to deduce usernames from it
+# and make sure we're not about to attempt to overwrite a unix user:
 if($username =~ /.+/){
 	$c->{'username'} = $username;
 }elsif($c->{'domain'} =~ /^([^\.]+)/){
@@ -73,12 +56,14 @@ if($username =~ /.+/){
 	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
 }
 
-# Convert all the 'env' bit of the yaml to environment vars:
-setEnvironmentVariables();
+# Set up an environment variable for each key in the env
+# bit of the config:
+setEnvironmentVariables($c->{'env'});
 
 
-# The config file has a list of passwords that will need to be generated.
-# We generate and store them here. We also resolve any configured usernames.
+# The config file has a list of passwords that will need to be generated, we generate 
+# and store those here, and we also resolve any configured usernames by interpolating
+# any placeholders:
 my $users = $c->{'users'};
 foreach(keys(%$users)){
 	_warn("Zero-length password requested for '$_'") if $c->{'users'}->{$_}->{'length'} < 1;
@@ -100,23 +85,60 @@ foreach(@$scripts){
 	system($script) unless $dryRun > 0;
 }
 
+# And print the results!
+my $maxLength = undef;
 my $users = $c->{'users'};
+#oreach(0..1){
+
+my $maxLength;
+foreach my $userName (keys(%$users)){
+	foreach(keys($users->{$userName})){
+		next unless $_ =~ /^_.+_label$/; 
+		my $thisLength = length(interpretPlaceholders($users->{$userName}->{$_}));
+		$maxLength = $thisLength if $thisLength > $maxLength;
+	}
+}
+print "[[$maxLength]]\n";
 foreach my $userName (sort{$users->{$a}->{'order'} cmp $users->{$b}->{'order'}} keys(%$users) ){
 	if (my $label = $users->{$userName}->{'label'}){
 		print "$label:\n";
 	}else{
 		print "$userName\n";
 	}
-	print "\tusername: ".$users->{$userName}->{'username'}."\n";
-#$c->{'username'}".$users->{$userName}->{'username_suffix'}."\n";
-	print "\tpassword: $users->{$userName}->{'password'}\n";
+	my @output;
+	push (@output, ["Username", $users->{$userName}->{'username'}]);
+	push (@output, ["Password", $users->{$userName}->{'password'}]);
 	foreach(sort(keys($users->{$userName}))){
 		if($_ =~ /^_(.+)_label$/){
-			print "\t".interpretPlaceholders($users->{$userName}->{'_'.$1.'_label'}, 1);
-			print ": ".interpretPlaceholders($users->{$userName}->{'_'.$1.'_value'}, 1). "\n";
+			my $label = interpretPlaceholders($users->{$userName}->{'_'.$1.'_label'}, 1);
+			my $value = interpretPlaceholders($users->{$userName}->{'_'.$1.'_value'}, 1);
+			push(@output, [$label, $value]);
 		}
 	}
+	printResults(\@output, $maxLength);
 	print "\n";
+}
+
+
+sub printResults{
+	my $toPrint = shift;
+	my $maxWidth = shift;;
+	my @output;
+	$maxWidth+=4;
+	foreach(@$toPrint){
+		printf("  %-${maxWidth}s%s\n", $_->[0].":", $_->[1]);
+	}
+}
+
+sub getMaxLength{
+	my $strings = shift;
+	my $maxLength = 0;
+	foreach(@$strings){
+		$maxLength = length($_->[0]) if length($_->[0]) > $maxLength;
+		
+	}
+	print "[$maxLength]";
+	return $maxLength;
 }
 
 # # # #
@@ -165,7 +187,8 @@ sub interpretPlaceholders{
 }
 # Sets environment vars for each thing defined in the 'env' bit of the config:
 sub setEnvironmentVariables{
-	my $e = $c->{'env'};
+#	my $e = $c->{'env'};
+	my $e = shift;
 	foreach my $key (keys(%{$c->{'env'}})){
 		my $envKey = uc($key);
 		$ENV{$envKey} = $c->{'env'}->{$key};
@@ -198,17 +221,35 @@ sub listConfigFiles{
 # the name of the chosen one. If there's only one, just returns the name of that
 # file
 sub chooseConfigFile{
-	my $d_config = shift;
-	my @f_config = listConfigFiles($d_config);
-	return $d_config."/".$f_config[0] if $#f_config == 0;
-	exit 1 if $verbosity < 0;
-	_error("Multiple config files found; pick one by number:\n", 0);
-	for(my $i = 0; $i<=$#f_config; $i++){
-		_error("$i\t$f_config[$i]\n", 0);
+	my $d_configFiles = shift;
+	my $configFilePreference = shift;
+	my @configFiles = listConfigFiles($d_configFiles);
+	if($configFilePreference){
+		my @matchingConfigFiles = grep {/^$configFilePreference/} @configFiles;
+		my $numMatched = scalar(@matchingConfigFiles);
+		if ($numMatched == 1){
+			$f_config = $d_configFiles."/".@matchingConfigFiles[0];
+		}else{
+			_error("Ambiguous config file choice. Found $numMatched files:", 0);
+			if($numMatched > 1){
+				foreach(@matchingConfigFiles){
+					_error("\t$_", 0);
+				}
+			}
+			_error("Run without '-c' to be presented with a list to choose from");
+		}
+	}else{
+		my @f_config = listConfigFiles($d_configFiles);
+		return $d_configFiles."/".$configFiles[0] if $#configFiles == 0;
+		exit 1 if $verbosity < 0;
+		_error("Multiple config files found; pick one by number:\n", 0);
+		for(my $i = 0; $i<=$#configFiles; $i++){
+			_error("$i\t$configFiles[$i]\n", 0);
+		}
+		_error( "\n", 0);
+		my $choice = <STDIN>;
+		return $d_configFiles."/".$configFiles[$choice] if($f_config[$choice] =~ /.+/);
 	}
-	_error( "\n", 0);
-	my $choice = <STDIN>;
-	return $d_config."/".$f_config[$choice] if($f_config[$choice] =~ /.+/);
 }
 
 # Handy for keeping track of/control over various sorts of output:
