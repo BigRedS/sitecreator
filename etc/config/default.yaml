@@ -54,17 +54,17 @@ users:
   # included in the output. They must start with an underscore, and the label end
   # with 'label' and the value with 'value'. Both are interpolated for placeholders
   # as per the arguments to scripts.
-  _database_label: database
+  _database_label: Database
   _database_value: %USERNAME%
-  _host_label: hostname
+  _host_label: Hostname
   _host_value: localhost
   
  mysqldev:
   label: MySQL Dev user
   username: %USERNAME%_dev
-  _database_label: database
+  _database_label: Database
   _database_value: %USERNAME%_dev
-  _host_label: hostname
+  _host_label: Hostname
   _host_value: localhost
   length: 12
   order: 3
@@ -73,12 +73,12 @@ users:
   label: Mail administration
   length: 14
   username: %DOMAIN%
-  _url_label: Mail admin URL
-  _url_value: https://%DOMAIN%/mailadmin
+  _adminurl_label: Mail admin URL
+  _adminurl_value: https://%DOMAIN%/mailadmin
   order: 5
-  _mx1_label: primary MX record
+  _mx1_label: Primary MX record
   _mx1_value: mx1.%DOMAIN%
-  _mx2_label: secondary MX record
+  _mx2_label: Secondary MX record
   _mx2_value: mx2.%DOMAIN%
   
 scripts:
@@ -109,7 +109,7 @@ scripts:
  - create_apache_vhost.pl %USERNAME% %DOMAINS%
  - restart_apache.sh
  - add_ssh_keys.sh %USERNAME% %TEMPLATES_DIR%
- - add_mail_domain.sh %DOMAIN% %PASSWORD_MAIL%
+# - add_mail_domain.sh %DOMAIN% %PASSWORD_MAIL%
 
 apache:
   testurldomain: /bin/hostname 
