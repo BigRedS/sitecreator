@@ -1,0 +1,5 @@
+ Match User [% user %]
+         ChrootDirectory /home
+         AllowTCPForwarding no
+         X11Forwarding no
+         ForceCommand internal-sftp
