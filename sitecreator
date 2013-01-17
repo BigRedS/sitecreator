@@ -6,14 +6,44 @@ use Data::Dumper;
 use YAML qw/LoadFile/;
 use Getopt::Long;
 
-my $f_config = findConfigFiles("./etc/config/");
-my $c = LoadFile($f_config);
+# Directory with config files in it:
+my $d_configFiles = "./etc/config/";
+# Once we've worked out which config file
+# to use, that'll go here:
+my $f_config = undef;
+# This is the hashref that we'll fill from
+# the YAML.
+my $c;
 
+my $configFilePreference = undef;
 # Process some options:
 GetOptions(
 	"a=s@" => \$c->{'serveraliases'},
 	"u=s"  => \$c->{'username'},
+	"c=s"  => \$configFilePreference,
 );
+
+if($configFilePreference){
+	my @configFiles = listConfigFiles($d_configFiles);
+	my @matchingConfigFiles = grep {/^$configFilePreference/} @configFiles;
+	my $numMatched = scalar(@matchingConfigFiles);
+	if ($numMatched == 1){
+		$f_config = $d_configFiles."/".@matchingConfigFiles[0];
+	}else{
+		_warn("Ambiguous config file choice. Found $numMatched files:");
+		if($numMatched > 1){
+			foreach(@matchingConfigFiles){
+				_warn("\t$_");
+			}
+		}
+		_error("Run without '-c' to be presented with a list to choose from");
+	}
+}else{
+	my $f_config = chooseConfigFile("./etc/config/");
+}
+_info( "Using config file '$f_config'");
+
+my $c = LoadFile($f_config);
 $c->{'domain'} = $ARGV[0];
 
 # Check the domain is sane, and decide whether or not to deduce usernames from it:
@@ -91,24 +121,29 @@ sub createPassword{
 	}
 	return $password;
 }
-
-sub findConfigFiles{
+sub listConfigFiles{
 	my $d_config = shift;
 	opendir(my $dh_config, $d_config) or die "Couldn't open config directory '$d_config' : $!";
 	my @f_config = grep{/\.yaml$/} sort(readdir($dh_config));
+	return @f_config;
+}
+
+sub chooseConfigFile{
+	my $d_config = shift;
+	my @f_config = listConfigFiles($d_config);
 	return $d_config."/".$f_config[0] if $#f_config == 0;
 	print "Multiple config files found; pick one by number:\n";
 	for(my $i = 0; $i<=$#f_config; $i++){
 		print "$i\t$f_config[$i]\n";
 	}
 	print "\n";
-	comy $choice = <STDIN>;
+	my $choice = <STDIN>;
 	return $d_config."/".$f_config[$choice] if($f_config[$choice] =~ /.+/);
 }
 
 sub _warn{
 	my $message = shift;
-	chomp $messages;
+	chomp $message;
 	print STDERR $message."\n";
 }
 
@@ -120,6 +155,11 @@ sub _error{
 	exit $exit;
 }
 
+sub _info{
+	my $message = shift;
+	chomp $message;
+	print "INFO: $message\n";
+}
 sub _log{
 	my $message = shift;
 	chomp $message;
