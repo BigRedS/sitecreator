@@ -6,16 +6,30 @@
 scripts_dir: /home/avi/bin/sitecreator/etc/scripts/
 templates_dir: /home/avi/bin/sitecreator/etc/scripts/templates
 
-# Passwords that will need to be generated. These are created 
-# according to options here and passed to the scripts when called
-# as %PASSWORD_<name>%:
-passwords:
+# The 'users' block defines users that will need to be created. In the 
+# next block you pass these details to the scripts that do the actual 
+# user creation and password setting. You reference these there by
+# the name given to them here, and these stanzas define their properties:
+users:
+ # For example, here we simply state that the unix user reqiures a password
+ # of nine characters. We will later pass this to the 'create_unix_user.sh' 
+ # script by calling it %PASSWORD_unix%
+ unix:
+  length: 9
+
+# And here we create two MySQL users, one called 'mysql' and the other 
+# 'mysqldev'. The MySQL user simply needs a password distinct from the 
+# unix one, but can have the same username. This is then called 
+# %PASSWORD_mysql% when it is passed to create_mysql.sh:
+# 'mysqldev', however, also requires a new username. This username is
+# created by appending the 'user_suffix' to the generated username.
+# Incidentally, the create_mysql.sh script creates a database for each user, 
+# but that's not defined here.
  mysql:
   length: 12
  mysqldev:
+  user_suffix: _dev
   length: 12
- unix:
-  length: 9
 
 
 # Scripts to run, in the order in which they should be run. There
@@ -27,14 +41,18 @@ passwords:
 #	%TEMPLATES_DIR%   templates directory
 #	%PASSWORD_<name>% Generated password. This password will only be generated
 #                         if it is listed in 'passwords' above
-scripts:
+#
  - create_unix_user.sh %USERNAME% %PASSWORD_unix%
+# You can also reference usernames and passwords defined in 'users' above.
+# Here's an example of using a generated password, in this case the mysql one:
  - create_mysql.sh %USERNAME% %PASSWORD_mysql%
- - create_mysql.sh %USERNAME_dev %PASSWORD_mysqldev
+# Here, too, we create another MySQL user with another different password, but also
+# a different username. In this case, we're creating the 'mysqldev' user, which not
+# only requiores its own password, but a username suffix of '_dev':
+ - create_mysql.sh %USERNAME_mysqldev% %PASSWORD_mysqldev%
  - create_apache_vhost.pl %USERNAME% %TEMPLATES_DIR% %DOMAINS%
  - restart_apache.sh
  - add_ssh_keys.sh %USERNAME% %TEMPLATES_DIR%
-
 
 apache:
   testurldomain: /bin/hostname 
