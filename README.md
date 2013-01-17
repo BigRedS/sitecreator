@@ -1,26 +1,49 @@
 sitecreator
 ===========
 
-This README is more a to-do list than an honest description currently. 
-
-Sitecreator is intended to be a flexible means of automating the process of creating
-accounts on shared-style servers. It has know necessary knowledge of what sort of 
-accounts it's going to set up, just a list of passwords (and, optionally) usernames
-to generate, and a list of scripts to pass these to as arguments.
-
-It is in its simplest use run with a domain-name as its only argument:
-
-    sitecreator mywebsite.com
-
-It deduces a username (everything in the domain name up to the first dot) and then reads
-a YAML file to find out which usernames and passwords to generate, and then runs the 
-scripts defined in that file to create those usernames and any other bits and pieces 
-(Apache config, SSH keys etc.)
+Sitecreator is a flexible means of automating the process of creating accounts on 
+shared-style servers. It has a directory of scripts that it uses to do the various
+jobs (create unix users, vhosts, modify MySQL permissions), and having generated 
+the necessary passwords simply calls these scripts in turn according to its 
+configuration, and then prints out those username and password pairs.
 
 
-If more than one yaml file exists in the config/ directory, the user is presented with
-a list to choose from, or may simply choose it by name with a command-line option. 
+It has a mechanism for including in its output what the scripts are doing; for example
+the file at `etc/config/example.yaml` prints the name of the database created by
+the MySQL script, having been told what form that will take.
 
 
-Currently, default.yaml (at etc/config/default.yaml) is actually a specification 
-masquerading as a config file.
+In its simplest use, sitecreator is called with just a domain name as an argument
+and, having done its work prints out the details. This is the printed result of 
+using the configuration file at `etc/config/default.yaml`, having set up all the 
+user accounts:
+
+
+
+     avi@amazing:~$ sitecreator aviswebsite.co.uk 
+     FTP/SSH:
+       Username:              aviswebsite
+       Password:              E@Vi}FPxL
+     
+     MySQL:
+       Username:              aviswebsite
+       Password:              cAnt:'r'*?<F
+       Database:              aviswebsite
+       Hostname:              localhost
+     
+     MySQL Dev user:
+       Username:              aviswebsite_dev
+       Password:              HBA4zAn@IZ9l
+       Database:              aviswebsite_dev
+       Hostname:              localhost
+     
+     Mail administration:
+       Username:              aviswebsite.co.uk
+       Password:              jkd9>j]>Mhczf}
+       Mail admin URL:        https://aviswebsite.co.uk/mailadmin
+       Primary MX record:     mx1.aviswebsite.co.uk
+       Secondary MX record:   mx2.aviswebsite.co.uk
+     
+     avi@amazing:~$ 
+
+
