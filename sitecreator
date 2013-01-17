@@ -95,6 +95,25 @@ foreach(@$scripts){
 	system($script) unless $dryRun > 0;
 }
 
+my $users = $c->{'users'};
+#foreach my $userName (keys(%$users)){
+foreach my $userName (sort{$users->{$a}->{'order'} cmp $users->{$b}->{'order'}} keys(%$users) ){
+	if (my $label = $users->{$userName}->{'label'}){
+		print "$label:\n";
+	}else{
+		print "$userName\n";
+	}
+	print "\tusername: $c->{'username'}".$users->{$userName}->{'username_suffix'}."\n";
+	print "\tpassword: $users->{$userName}->{'password'}\n";
+	foreach(sort(keys($users->{$userName}))){
+		if($_ =~ /^_(.+)_label$/){
+			print "\t".interpretPlaceholders($users->{$userName}->{'_'.$1.'_label'}, 1);
+			print ": ".interpretPlaceholders($users->{$userName}->{'_'.$1.'_value'}, 1). "\n";
+		}
+	}
+	print "\n";
+}
+
 # # # #
 # Returns true of the user exists, false if it doesn't.
 sub unixUserExists{
@@ -103,12 +122,20 @@ sub unixUserExists{
 }
 
 # I'm sure there's a better name for this. Replaces all the  placeholder 
-# strings (%USERNAME% etc.) ith the values that they're a placeholder for.
+# strings (%USERNAME% etc.) with the values that they're a placeholder for.
+#
+# Accepts an optional second parameter, which defines wether those variables
+# which are normally quoted get those quotes. If this value is passed as '1'
+# the quotes are turned off, else they're present.
 sub interpretPlaceholders{
 	my $line = shift;
-	$line =~ s/%USERNAME%/"$c->{'username'}"/g;
-	$line =~ s/%TEMPLATES_DIR%/"$c->{'templates_dir'}"/g;
-	$line =~ s/%DOMAIN%/"$c->{'domain'}/g;
+	my $quotesOff = shift;
+	my $q = '"';
+	if($quotesOff == 1){
+		$q = '';
+	}
+	$line =~ s/%USERNAME%/$q$c->{'username'}$q/g;
+	$line =~ s/%DOMAIN%/$q$c->{'domain'}/g;
 
 	if($line =~ /%DOMAINS%/){
 		my $domains = $c->{'domain'};
@@ -119,14 +146,14 @@ sub interpretPlaceholders{
 	if($line =~ /%PASSWORD_(\S+)%/){
 		my $passwordName = $1;
 		if (my $pw = $c->{'users'}->{$passwordName}->{'password'}){
-			$line =~ s/%PASSWORD_$passwordName%/"$pw"/g;
+			$line =~ s/%PASSWORD_$passwordName%/$q$pw$q/g;
 		}
 	}
 
 	if($line =~ /%USERNAME_(\S+)%/){
 		my $userName = $1;
 		my $userSuffix = $c->{'users'}->{$userName}->{'username_suffix'};
-		$line =~ s/%USERNAME_$userName%/"$c->{'username'}.$users->{'$userName'}->{'username_suffix'}"/g;
+		$line =~ s/%USERNAME_$userName%/$q$c->{'username'}.$users->{'$userName'}->{'username_suffix'}$q/g;
 	}
 
 	return $line;

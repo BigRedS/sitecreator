@@ -16,15 +16,23 @@ env:
  vhost_dir: /tmp
 
 # The 'users' block defines users that will need to be created. In the 
-# next block you pass these details to the scripts that do the actual 
-# user creation and password setting. You reference these there by
-# the name given to them here, and these stanzas define their properties:
+# next block ('scripts'), you pass these details to the scripts that do
+# the actual user creation and password setting. You reference these there 
+# by the name given to them here, and these stanzas define their properties:
 users:
  # For example, here we simply state that the unix user reqiures a password
  # of nine characters. We will later pass this to the 'create_unix_user.sh' 
  # script by calling it %PASSWORD_unix%
+ # When sitecreator exits it prints a list of the user accounts it created 
+ # and their passwords, the 'order' key is used to specify the order in which
+ # these should be output (smaller numbers first), and the 'label' key is used
+ # to set what is printed to screen as the name of this. If 'label' is undefined
+ # then the name of the block is used 'unix' here, and if the order key is
+ # undefined then so to is the order in which the users are printed.
  unix:
+  label: FTP/SSH
   length: 9
+  order: 1
 
 # And here we create two MySQL users, one called 'mysql' and the other 
 # 'mysqldev'. The MySQL user simply needs a password distinct from the 
@@ -35,14 +43,31 @@ users:
 # Incidentally, the create_mysql.sh script creates a database for each user, 
 # but that's not defined here.
  mysql:
+  label: MySQL
   length: 12
+  order: 2
+  # Arbitrary data can be included for printing out at the end of the process. 
+  # sitecreator has know knowledge of what the scripts it is executing are 
+  # doing, so if they do anything other than simply create a user with a 
+  # username and password you can use these labels to get details on those things
+  # included in the output. They must start with an underscore, and the label end
+  # with 'label' and the value with 'value'. Both are interpolated for placeholders
+  # as per the arguments to scripts.
+  _database_label: database
+  _database_value: %USERNAME%
+  
  mysqldev:
+  label: MySQL Dev user
   username_suffix: _dev
+  _database_label: database
+  _database_value: %USERNAME%_dev
   length: 12
+  order: 3
 
 scripts:
 # Scripts to run, in the order in which they should be run. There
 # are some placeholders to use to have arguments sent to the scripts:
+#	%DOMAIN%          The domain passed on the command-line
 #	%DOMAINS%         a space-separated list of domains, including aliases
 #                         the first member of the list is the domain passed as
 #                         the argument, followed by those specified by -a
@@ -50,7 +75,12 @@ scripts:
 #	%TEMPLATES_DIR%   templates directory
 #	%PASSWORD_<name>% Generated password. This password will only be generated
 #                         if it is listed in 'passwords' above
+#	%USERNAME_<name>% %USERNAME%, but with the username_suffix in the named
+#                         user appended to it.
 #
+# Here, for example, we create a Unix user by passing the 'create_unix_user.sh' 
+# script the username generated from the domain, and the password created to satisfy
+# the length demanded in the 'unix' block of 'users':
  - create_unix_user.sh %USERNAME% %PASSWORD_unix%
 # You can also reference usernames and passwords defined in 'users' above.
 # Here's an example of using a generated password, in this case the mysql one:
