@@ -6,10 +6,13 @@ use Data::Dumper;
 use Template;	#libtemplate-perl
 
 my $user = shift;
-my $d_templates = $TEMPLATES_DIR
+my $d_templates = $ENV{'TEMPLATES_DIR'};
+my $d_virtualhost = $ENV{'VHOST_DIR'};
 my $serverName = shift;
 my @domains = @ARGV;
+my $f_virtualhost = "$d_virtualhost/$serverName";
 
+print "$f_virtualhost\n";
 
 my $tt = Template->new({
 	INCLUDE_PATH => $d_templates,
@@ -22,7 +25,7 @@ my $vars = {
 	ServerAliases => createServerAliasDirectives(@domains),
 };
 
-$tt->process('create_apache_vhost', $vars);
+$tt->process('create_apache_vhost', $vars, $f_virtualhost) or die "Error creating vhost at $f_virtualhost : $!";
 
 sub createServerAliasDirectives{
 	my @domains = @_;
