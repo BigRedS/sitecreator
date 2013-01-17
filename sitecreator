@@ -29,9 +29,9 @@ if($c->{'domain'} =~ /^([^\.]+)/){
 
 # The config file has a list of passwords that will need to be generated.
 # We generate and store them here:
-my $passwords = $c->{'passwords'};
-foreach(keys(%$passwords)){
-	$c->{'passwords'}->{$_}->{'password'} = createPassword($c->{'passwords'}->{$_}->{'length'});
+my $users = $c->{'users'};
+foreach(keys(%$users)){
+	$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
 }
 
 # Now 
@@ -59,16 +59,21 @@ sub interpretPlaceholders{
 
 	if($line =~ /%DOMAINS%/){
 		my $domains = $c->{'domain'};
-		$domains.=" ".join(" ", @{$c->{'serveraliases'}});
+		$domains.=" ".join(" ", @{$c->{'serveraliases'}}) if defined($c->{'serveraliases'});
 		$line =~ s/%DOMAINS%/$domains/g;
 	}
 
 	if($line =~ /%PASSWORD_(\S+)%/){
 		my $passwordName = $1;
-		print "[$passwordName]\n";
-		if (my $pw = $c->{'passwords'}->{$passwordName}->{'password'}){
-			$line =~ s/%P_$passwordName%/"$pw"/g;
+		if (my $pw = $c->{'users'}->{$passwordName}->{'password'}){
+			$line =~ s/%PASSWORD_$passwordName%/"$pw"/g;
 		}
+	}
+
+	if($line =~ /%USERNAME_(\S+)%/){
+		my $userName = $1;
+		my $userSuffix = $c->{'users'}->{$userName}->{'username_suffix'};
+		$line =~ s/%USERNAME_$userName%/"$c->{'username'}.$users->{'$userName'}->{'username_suffix'}"/g;
 	}
 	return $line;
 }
