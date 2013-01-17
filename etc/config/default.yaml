@@ -22,13 +22,13 @@ users:
 # unix one, but can have the same username. This is then called 
 # %PASSWORD_mysql% when it is passed to create_mysql.sh:
 # 'mysqldev', however, also requires a new username. This username is
-# created by appending the 'user_suffix' to the generated username.
+# created by appending the 'username_suffix' to the generated username.
 # Incidentally, the create_mysql.sh script creates a database for each user, 
 # but that's not defined here.
  mysql:
   length: 12
  mysqldev:
-  user_suffix: _dev
+  username_suffix: _dev
   length: 12
 
 
