@@ -56,38 +56,12 @@ if($username =~ /.+/){
 	_error("Invalid domain name ('$c->{'domain'}'): must start with a seris of characters that are not full-stops ('.')");
 }
 
-# Set up an environment variable for each key in the env
-# bit of the config:
+# Set up an environment variable for each key in the env bit of the config:
 setEnvironmentVariables($c->{'env'});
-
-# The config file has a list of passwords that will need to be generated, we generate 
-# and store those here, and we also resolve any configured usernames by interpolating
-# any placeholders:
-my $users = $c->{'users'};
-foreach(keys(%$users)){
-	_warn("Zero-length password requested for '$_'") if $c->{'users'}->{$_}->{'length'} < 1;
-	$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
-	if($c->{'users'}->{$_}->{'username'}){
-		$c->{'users'}->{$_}->{'username'} = interpretPlaceholders($c->{'users'}->{$_}->{'username'}, 1);
-	}else{
-		$c->{'users'}->{$_}->{'username'} = $c->{'username'};
-	}
-}
-my ($d_log,$f_log,$fh_log);
-if(defined($c->{'env'}->{'log_dir'})){
-	$d_log = $c->{'env'}->{'log_dir'};
-	if ( -d $d_log && -w $d_log ){
-		$f_log = $d_log ."/".$c->{'domain'};
-		open($fh_log, ">>", $f_log) or die "Error opening logfile: $!";
-	}else{
-		_error("Error opening logfile; either not writeable or non existant");
-	}
-}else{
-	$fh_log = \*STDOUT;
-}
-
-
-
+# Create and set all configured passwords:
+setPasswords($c);
+# Get a filehandle on our logfile:
+my $fh_log = getLogFileHandle($c);
 
 
 # Iterate through the scripts, running each one:
@@ -219,6 +193,25 @@ sub interpretPlaceholders{
 
 	return $line;
 }
+
+# The config file has a list of passwords that will need to be generated, we generate 
+# and store those here, and we also resolve any configured usernames by interpolating
+# any placeholders:
+sub setPasswords{
+	my $c = shift;
+	my $users = $c->{'users'};
+	foreach(keys(%$users)){
+		_warn("Zero-length password requested for '$_'") if $c->{'users'}->{$_}->{'length'} < 1;
+		$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
+		if($c->{'users'}->{$_}->{'username'}){
+			$c->{'users'}->{$_}->{'username'} = interpretPlaceholders($c->{'users'}->{$_}->{'username'}, 1);
+		}else{
+			$c->{'users'}->{$_}->{'username'} = $c->{'username'};
+		}
+	}
+}
+
+
 # Sets environment vars for each thing defined in the 'env' bit of the config:
 sub setEnvironmentVariables{
 #	my $e = $c->{'env'};
@@ -309,6 +302,24 @@ sub _info{
 	chomp $message;
 	$message =~ s/\n/\nINFO: /g;
 	print "INFO: $message\n";
+}
+
+
+sub getLogFileHandle{
+	my $c = shift;
+	my ($d_log,$f_log,$fh_log);
+	if(defined($c->{'env'}->{'log_dir'})){
+		$d_log = $c->{'env'}->{'log_dir'};
+		if ( -d $d_log && -w $d_log ){
+			$f_log = $d_log ."/".$c->{'domain'};
+			open($fh_log, ">>", $f_log) or die "Error opening logfile: $!";
+		}else{
+			_error("Error opening logfile; either not writeable or non existant");
+		}
+	}else{
+		$fh_log = \*STDOUT;
+	}
+	return $fh_log;
 }
 
 sub _log{
