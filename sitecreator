@@ -3,8 +3,16 @@
 use strict;
 use Data::Dumper;
 
+# This script doesn't actually use Template, but this is here so that
+# if you don't have the Template Toolkit installed you will get an error
+# here and now, rather than halfway through configuring a user.
+use Template; #libtemplate-perl
+
+# These, though, you *do* need for this file :)
 use YAML qw/LoadFile/;
 use Getopt::Long;
+
+
 
 # Directory with config files in it:
 my $d_configFiles = "./etc/config/";
