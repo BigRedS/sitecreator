@@ -127,11 +127,12 @@ sub runscript{
 	$cmd = $c->{'env'}->{'scripts_dir'}.$cmd;
 	my $output = `$cmd`;
 	if($? == 0){
-		_log("Command: $cmd", $identifier);
+		_log("COMMAND: $cmd", $identifier);
 		_log($output, $identifier);
 
 	}else{
-		_log("Error running command: $cmd (returned $?)", $identifier);
+		_log("ERROR running command: $cmd (returned $?)", $identifier);
+		_warn("$script exited with non-zero value : $?");
 		_log($output, $identifier);
 	}
 }
@@ -292,7 +293,7 @@ sub _warn{
 	return unless $verbosity > 0;
 	my $message = shift;
 	chomp $message;
-	print STDERR $message."\n";
+	print STDERR "WARN: $message\n";
 }
 
 sub _error{
