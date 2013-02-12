@@ -60,7 +60,6 @@ if($username =~ /.+/){
 # bit of the config:
 setEnvironmentVariables($c->{'env'});
 
-
 # The config file has a list of passwords that will need to be generated, we generate 
 # and store those here, and we also resolve any configured usernames by interpolating
 # any placeholders:
@@ -74,22 +73,36 @@ foreach(keys(%$users)){
 		$c->{'users'}->{$_}->{'username'} = $c->{'username'};
 	}
 }
+my ($d_log,$f_log,$fh_log);
+if(defined($c->{'env'}->{'log_dir'})){
+	$d_log = $c->{'env'}->{'log_dir'};
+	if ( -d $d_log && -w $d_log ){
+		$f_log = $d_log ."/".$c->{'domain'};
+		open($fh_log, ">>", $f_log) or die "Error opening logfile: $!";
+	}else{
+		_error("Error opening logfile; either not writeable or non existant");
+	}
+}else{
+	$fh_log = \*STDOUT;
+}
+
+
+
+
 
 # Iterate through the scripts, running each one:
 my $scripts = $c->{'scripts'};
 foreach(@$scripts){
 	my $script = interpretPlaceholders($_);
-	$script = $c->{'env'}->{'scripts_dir'}.$script;
 	_info("running $script") unless $dryRun > 0;
 	_info("DRYRUN: $script") if $dryRun > 0;
-	system($script) unless $dryRun > 0;
+	runscript($script, $c->{'domain'}) unless $dryRun > 0;
 }
 
 # And print the results!
 my $maxLength = undef;
 my $users = $c->{'users'};
-#oreach(0..1){
-
+# Iterate over each line to find the column widths that we want before doing the actual printing:
 my $maxLength;
 foreach my $userName (keys(%$users)){
 	foreach(keys($users->{$userName})){
@@ -98,6 +111,7 @@ foreach my $userName (keys(%$users)){
 		$maxLength = $thisLength if $thisLength > $maxLength;
 	}
 }
+# Do the actual printing:
 foreach my $userName (sort{$users->{$a}->{'order'} cmp $users->{$b}->{'order'}} keys(%$users) ){
 	if (my $label = $users->{$userName}->{'label'}){
 		print "$label:\n";
@@ -118,6 +132,27 @@ foreach my $userName (sort{$users->{$a}->{'order'} cmp $users->{$b}->{'order'}} 
 	print "\n";
 }
 
+# # # #
+# # #
+# #
+#
+
+sub runscript{
+	my $cmd = shift;
+	my $script = (split(/\s/, $cmd))[0];
+	my $identifier = shift.":$script";
+
+	$cmd = $c->{'env'}->{'scripts_dir'}.$cmd;
+	my $output = `$cmd`;
+	if($? == 0){
+		_log("Command: $cmd", $identifier);
+		_log($output, $identifier);
+
+	}else{
+		_log("Error running command: $cmd (returned $?)", $identifier);
+		_log($output, $identifier);
+	}
+}
 
 sub printResults{
 	my $toPrint = shift;
@@ -278,9 +313,15 @@ sub _info{
 
 sub _log{
 	my $message = shift;
+	my $prefix = shift;
+	my $time = time();
+	my $gap = " ";
 	chomp $message;
-	$message =~ s/\n/\nLOG:  /g;
-	print "LOG:  $message\n";
+	$prefix = "[".$prefix."]" if $prefix;
+	$prefix = " ".$prefix;
+	$message = $time.$prefix.$gap.$message;
+	$message =~ s/\n/\n$time$prefix$gap/g;
+	print $fh_log $message."\n"; 
 }
 
 sub usage{
