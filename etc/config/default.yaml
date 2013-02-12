@@ -14,6 +14,8 @@ env:
  # Where to write Apache Vhosts. This, too, is required by
  # the apache vhost script:
  vhost_dir: /tmp
+ # Where to write logs:
+ log_dir: /tmp/sitecreator
 
 # The 'users' block defines users that will need to be created. In the 
 # next block ('scripts'), you pass these details to the scripts that do
@@ -110,6 +112,3 @@ scripts:
  - restart_apache.sh
  - add_ssh_keys.sh %USERNAME% %TEMPLATES_DIR%
 # - add_mail_domain.sh %DOMAIN% %PASSWORD_MAIL%
-
-apache:
-  testurldomain: /bin/hostname 
