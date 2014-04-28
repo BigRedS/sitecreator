@@ -1,7 +1,6 @@
 #! /usr/bin/perl
 
 use strict;
-use Data::Dumper;
 
 # This script doesn't actually use Template, but this is here so that
 # if you don't have the Template Toolkit installed you will get an error
@@ -225,7 +224,7 @@ sub setPasswords{
 	my $users = $c->{'users'};
 	foreach(keys(%$users)){
 		_warn("Zero-length password requested for '$_'") if $c->{'users'}->{$_}->{'length'} < 1;
-		$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'});
+		$c->{'users'}->{$_}->{'password'} = createPassword($c->{'users'}->{$_}->{'length'}, $c->{'users'}->{$_}->{'complexity'});
 		if($c->{'users'}->{$_}->{'username'}){
 			$c->{'users'}->{$_}->{'username'} = interpretPlaceholders($c->{'users'}->{$_}->{'username'}, 1);
 		}else{
@@ -237,26 +236,34 @@ sub setPasswords{
 
 # Sets environment vars for each thing defined in the 'env' bit of the config:
 sub setEnvironmentVariables{
-	my $c = shift;
+	my $env = shift;
 	foreach my $key (keys(%{$defaultEnv})){
-		unless(exists($c->{$key})){
-			$c->{$key} = $defaultEnv->{$key};
+		unless(exists($env->{$key})){
+			$env->{$key} = $defaultEnv->{$key};
 		}
 	}
-	foreach my $key (keys(%{$c->{'env'}})){
+	foreach my $key (keys(%{$env})){
 		my $envKey = uc($key);
-		$ENV{$envKey} = $c->{$key};
-		_info("Set \$ENV{$envKey} to '".$ENV{$envKey}."' ($c->{'env'}->{$key})");
+		$ENV{$envKey} = $env->{$key};
+		_info("Set \$ENV{$envKey} to '".$ENV{$envKey}."' ($env->{$key})");
 	}
-	return $c;
+	return $env;
 }
 
 # Create a random password:
 sub createPassword{
 	my $length = shift;
+	my $complexity = shift;
 	my @chars = ("A".."Z", "a".."z", 1..9);
-	@chars = (@chars, "!", '$', "%", "^", "&", "*", "(", ")", "{", "}", "[", "]", ":", "@");
-	@chars = (@chars, "~", ";", "'", "#", "<", ">", "?", ",", ".");
+	if($complexity && $complexity > 0){
+		@chars = (@chars, "!", '$', "%", "^", "&", "-", "_");
+	}
+	if($complexity && $complexity > 1){
+		@chars = (@chars, "*", "(", ")", "{", "}", "[", "]", ":", "@");
+	}
+	if($complexity && $complexity > 2){
+		@chars = (@chars, "~", ";", "'", "#", "<", ">", "?", ",", ".");
+	}
 	my $password;
 	for(my $i = 0; $i<$length; $i++){
 		$password.=$chars[rand($#chars)];
