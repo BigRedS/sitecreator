@@ -4,7 +4,8 @@ dir_map:
   sbin: /usr/sbin
   lib:  /usr/lib
 description: Scripts for creating sites' users. dbs and stuff
+package: sitecreator
+maintainer: "Avi Greenbury <ialoneambest@gmail.com>"
 requires:
   perl: 0
   libtemplate-perl: 0
-  
