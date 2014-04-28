@@ -1,0 +1,10 @@
+--
+dir_map:
+  etc:  /etc
+  sbin: /usr/sbin
+  lib:  /usr/lib
+description: Scripts for creating sites' users. dbs and stuff
+requires:
+  perl: 0
+  libtemplate-perl: 0
+  
