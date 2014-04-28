@@ -15,7 +15,7 @@ use Getopt::Long;
 
 
 # Directory with config files in it:
-my $d_configFiles = "./etc/config/";
+my $d_configFiles = "/etc/sitecreator/";
 # Once we've worked out which config file
 # to use, that'll go here:
 my $f_config = undef;
@@ -27,6 +27,12 @@ my $configFilePreference = undef;
 # Whether to actually do anything or not:
 my $dryRun = undef;
 
+my $defaultEnv = {
+  scripts_dir   => "/usr/lib/sitecreator/scripts",
+  templates_dir => "/usr/lib/sitecreator/templates",
+  vhost_dir     => "/etc/apache2/sites-available",
+  log_dir       => "/var/log/sitecreator",
+};
 
 # Process some options:
 my ($serveraliases, $username);
@@ -46,7 +52,14 @@ if ($domain =~ /^\s*$/){
 }
 
 # Work out which config file we should be using, and load it:
-$f_config = chooseConfigFile($d_configFiles,$configFilePreference);
+if( $configFilePreference && -f $configFilePreference ){
+	$f_config = $configFilePreference;
+}else{
+	if($configFilePreference){
+		_warn ("Couldn't find requested config file '$configFilePreference', attempting to find one");
+	}
+	$f_config = chooseConfigFile($d_configFiles,$configFilePreference);
+}
 _info( "Using config file '$f_config'");
 my $c = LoadFile($f_config);
 $c->{'domain'} = $domain;
@@ -65,7 +78,7 @@ if($username =~ /.+/){
 }
 
 # Set up an environment variable for each key in the env bit of the config:
-setEnvironmentVariables($c->{'env'});
+$c->{'env'} = setEnvironmentVariables($c->{'env'});
 # Create and set all configured passwords:
 setPasswords($c);
 # Get a filehandle on our logfile:
@@ -144,6 +157,7 @@ sub printResults{
 	$maxWidth+=4;
 	foreach(@$toPrint){
 		printf("  %-${maxWidth}s%s\n", $_->[0].":", $_->[1]);
+		
 	}
 }
 
@@ -223,13 +237,18 @@ sub setPasswords{
 
 # Sets environment vars for each thing defined in the 'env' bit of the config:
 sub setEnvironmentVariables{
-#	my $e = $c->{'env'};
-	my $e = shift;
+	my $c = shift;
+	foreach my $key (keys(%{$defaultEnv})){
+		unless(exists($c->{$key})){
+			$c->{$key} = $defaultEnv->{$key};
+		}
+	}
 	foreach my $key (keys(%{$c->{'env'}})){
 		my $envKey = uc($key);
-		$ENV{$envKey} = $c->{'env'}->{$key};
+		$ENV{$envKey} = $c->{$key};
 		_info("Set \$ENV{$envKey} to '".$ENV{$envKey}."' ($c->{'env'}->{$key})");
 	}
+	return $c;
 }
 
 # Create a random password:
