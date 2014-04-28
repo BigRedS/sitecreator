@@ -1,0 +1,18 @@
+# Define one unix user with a 9-character password:
+users:
+ unix:
+  label: FTP/SSH
+  length: 9
+  order: 1
+
+# And one MySQL user and db:
+ mysql:
+  label: MySQL
+  length: 12
+  order: 2
+  
+scripts:
+ - create_unix_user.sh %USERNAME% %PASSWORD_unix%
+ - create_mysql.sh %USERNAME% %PASSWORD_mysql%
+ - create_apache_vhost.pl %USERNAME% %DOMAINS%
+ - restart_apache.sh
