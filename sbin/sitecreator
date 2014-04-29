@@ -36,12 +36,12 @@ my $defaultEnv = {
 # Process some options:
 my ($serveraliases, $username);
 GetOptions(
-	"a=s@" => \$serveraliases,
-	"d!"   => \$dryRun,
-	"u=s"  => \$username,
-	"c=s"  => \$configFilePreference,
-	"v=i"  => \$verbosity,
-);
+	"aliases|=s@"    => \$serveraliases,
+	"dryrun|d!"      => \$dryRun,
+	"username|u=s"   => \$username,
+	"configfile|c=s" => \$configFilePreference,
+	"verbosity|v=i"  => \$verbosity,
+) or die "Failed to parse command-line arguments";
 
 # Check we've got a domain. If not, offer some small help:
 my $domain = $ARGV[0];
@@ -378,16 +378,28 @@ Creates sites.
 
 Usage:
  sitecreator [options] domain name
+      --aliases <domains>
       -a <domains>  List of additional, secondary domains. Perhaps for
-                    use as Apache ServerAliases
-      -c <file>     Config file to use. Should be in the config file 
+                    use as Apache ServerAliases. 'www' subdomain is 
+                    added automatically.
+
+      --configfile <file>
+      -c <file>     Config file to use.
+
+      --dryrun
+      -d            Don't execute any scripts or write any files
+
+      --username <username>
       -u <username> username to use, rather than deducing it from the
                     domain name
+
+      --verbosity <number>
       -v <number>   Verbosity:
                      2: Informative/debugging output, warnings and errors
                      1: Non-fatal warnings and fatal errors
-		     0: Only fatal errors
-		    -1: Hide even errors (exits silently on failure)
+                     0: Only fatal errors
+                     -1: Hide even errors (exits silently on failure)
 
 EOF
+
 }
