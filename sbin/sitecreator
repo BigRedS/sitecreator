@@ -358,6 +358,7 @@ sub getLogFileHandle{
 }
 
 sub _log{
+	return unless $fh_log;
 	my $message = shift;
 	my $prefix = shift;
 	my $time = time();
