@@ -263,7 +263,7 @@ sub createPassword{
 		@chars = (@chars, "*", "(", ")", "{", "}", "[", "]", ":", "@");
 	}
 	if($complexity && $complexity > 2){
-		@chars = (@chars, "~", ";", "'", "#", "<", ">", "?", ",", ".");
+		@chars = (@chars, "~", ";", "#", "<", ">", "?", ",", ".");
 	}
 	my $password;
 	for(my $i = 0; $i<$length; $i++){
