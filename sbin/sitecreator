@@ -136,7 +136,8 @@ sub runscript{
 	my $script = (split(/\s/, $cmd))[0];
 	my $identifier = shift.":$script";
 
-	$cmd = $c->{'env'}->{'scripts_dir'}.$cmd;
+	$cmd = $c->{'env'}->{'scripts_dir'}."/".$cmd;
+	$cmd =~ s#//#/#g;
 	my $output = `$cmd`;
 	if($? == 0){
 		_log("COMMAND: $cmd", $identifier);
@@ -347,6 +348,7 @@ sub getLogFileHandle{
 		$d_log = $c->{'env'}->{'log_dir'};
 		if ( -d $d_log && -w $d_log ){
 			$f_log = $d_log ."/".$c->{'domain'};
+			$f_log =~ s#//#/#g;
 			open($fh_log, ">>", $f_log) or die "Error opening logfile: $!";
 		}else{
 			_error("Error opening logfile; either not writeable or non existant");
