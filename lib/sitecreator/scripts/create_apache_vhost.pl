@@ -12,7 +12,7 @@ my @domains = @ARGV;
 
 my $tt = Template->new({
 	INCLUDE_PATH => $d_templates,
-	OUTPUT_PATH  => $ENV{'VHOST_DIR'}
+	OUTPUT_PATH  => $ENV{'VHOST_DIR'},
 	INTERPOLATE  => 1,
 }) || die "Error creating Template Toolkit object: $Template::ERROR\n";
 

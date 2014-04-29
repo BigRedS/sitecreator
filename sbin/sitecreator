@@ -36,7 +36,7 @@ my $defaultEnv = {
 # Process some options:
 my ($serveraliases, $username);
 GetOptions(
-	"aliases|=s@"    => \$serveraliases,
+	"aliases|a=s@"    => \$serveraliases,
 	"dryrun|d!"      => \$dryRun,
 	"username|u=s"   => \$username,
 	"configfile|c=s" => \$configFilePreference,
