@@ -22,7 +22,7 @@ my $vars = {
 	ServerAliases => createServerAliasDirectives(@domains),
 };
 
-$tt->process('create_apache_vhost', $vars, $serverName) or die "Error creating vhost at $f_virtualhost : $!";
+$tt->process('create_apache_vhost', $vars, $serverName) or die "Error creating vhost for $serverName in $ENV{'TEMPLATES_DIR'} : $!";
 
 sub createServerAliasDirectives{
 	my @domains = @_;
