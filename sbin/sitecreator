@@ -8,7 +8,7 @@ use strict;
 use Template; #libtemplate-perl
 
 # These, though, you *do* need for this file :)
-use YAML qw/LoadFile/;
+use YAML qw/LoadFile/; # libyaml-perl
 use Getopt::Long;
 
 

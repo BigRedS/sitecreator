@@ -9,3 +9,4 @@ maintainer: "Avi Greenbury <ialoneambest@gmail.com>"
 requires:
   perl: 0
   libtemplate-perl: 0
+  libyaml-perl: 0
